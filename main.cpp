@@ -21,29 +21,30 @@
 
 // pin name / pin number / port  
 // these are meant for the Seeed Studio Xiao NRF52840 board
-#define D0 2, 0
-#define D1 3, 0  
-#define D2 28, 0
-#define D3 29, 0 
-#define D4 4, 0  
-#define D5 5, 0  
-#define D6 11, 1 
-#define D7 12, 1 
-#define D8 13, 1 
-#define D9 14, 1 
-#define D10 15, 1 
-#define LED_BUILTIN_BLUE 6,0 
-#define LED_BUILTIN_GREEN 30,0 
-#define LED_BUILTIN_RED 26,0 
+#define D0 0, 2
+#define D1 0, 3  
+#define D2 0, 28
+#define D3 0, 29
+#define D4 0, 4 
+#define D5 0, 5  
+#define D6 1, 11 
+#define D7 1, 12
+#define D8 1, 13
+#define D9 1, 14 
+#define D10 1, 15 
+#define LED_BUILTIN_BLUE 0, 6 
+#define LED_BUILTIN_GREEN 0, 30 
+#define LED_BUILTIN_RED 0, 26 
 #define BUTTON_BUILTIN D1
 
 class DigitalOut{
   int pin, port;
   bool isOn = false;
   public:
-    DigitalOut(int pinNumber, int portNumber): pin(pinNumber), port(portNumber){ 
+    DigitalOut(int portNumber, int pinNumber, int initialVal = 0): pin(pinNumber), port(portNumber){ 
       int* pinConfig = (int *)(GPIO_0_BASEADDRESS + GPIO_CONF_OFFSET+4*pin + GPIO_PORT_OFFSET * port);
       *pinConfig = 0x00000003;   //  Configure pin as output, disconnect input buffer, no pull, standard '0', standard '1', no pin sensing.
+      write(initialVal);
     }
 
     void write(int val){
@@ -78,7 +79,7 @@ class DigitalIn{
   pinMode pinmode = PULLUP;
 
   public:
-    DigitalIn(int pinNumber, int portNumber): pin(pinNumber), port(portNumber){
+    DigitalIn(int portNumber, int pinNumber): pin(pinNumber), port(portNumber){
       int* pinConfig = (int *)(GPIO_0_BASEADDRESS + GPIO_CONF_OFFSET+4*pin + GPIO_PORT_OFFSET * port);
       *pinConfig = 0x0000000c;   //  Configure pin as input, connect input buffer, pull up, standard '0', standard '1', no pin sensing.
     }
@@ -122,9 +123,9 @@ class LFClkTimer{ // util class for turning on LFClkTimer, not intended to be us
 
 class MillisCounter{
   public:
-    MillisCounter(float period=1000.0){  // period is in ms
+    MillisCounter(float frequency=1000.0){  // period is in ms
       LFClkTimer LFCLKTimer;
-      changePeriod(period);
+      changePeriod(frequency);
       reset();
     }
 
@@ -167,7 +168,7 @@ class MillisCounter{
 // example usage
 // this code utilises the builtin LEDs and the button on the Seeed Studio expansion board
 int main(){
-  DigitalOut BLUELED(LED_BUILTIN_BLUE);
+  DigitalOut BLUELED(LED_BUILTIN_BLUE, 1); 
   DigitalOut GREENLED(LED_BUILTIN_GREEN);
 
   MillisCounter MILLIS;   // millisCounter updates every 1 ms, similar to arduino Millis
@@ -176,8 +177,7 @@ int main(){
   int previousOffTime = 0, togglePeriod = 500; // in ms
 
   DigitalIn Button(BUTTON_BUILTIN);
-  
-  BLUELED = 1;
+
   int currentMillis = 0;
 
   while(1){
@@ -185,9 +185,9 @@ int main(){
     currentMillis = MILLIS;
 
     if(Button == 1){
-      GREENLED = 1;
+      GREENLED = 0;
     }
-    else{GREENLED = 0;}
+    else{GREENLED = 1;}
     
     if(currentMillis - previousOffTime >= togglePeriod){  // todo automate this syntax
       BLUELED = !BLUELED;
